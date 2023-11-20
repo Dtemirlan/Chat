@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './ChatApp.css'
 
 interface Message {
     _id: string;
@@ -11,6 +12,7 @@ interface Message {
 const ChatApp: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [lastMessageDate, setLastMessageDate] = useState<string | null>(null);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -22,8 +24,15 @@ const ChatApp: React.FC = () => {
 
     const fetchMessages = async () => {
         try {
-            const response = await axios.get<Message[]>('http://146.185.154.90:8000/messages');
-            setMessages(response.data.reverse());
+            const response = await axios.get<Message[]>('http://146.185.154.90:8000/messages', {
+                params: { lastMessageDate },
+            });
+
+            const newMessages = response.data.reverse();
+            setMessages((prevMessages) => [...prevMessages, ...newMessages]);
+            if (newMessages.length > 0) {
+                setLastMessageDate(newMessages[0].datetime);
+            }
         } catch (error) {
             console.error('Error fetching messages:', error);
         }
@@ -33,20 +42,20 @@ const ChatApp: React.FC = () => {
         try {
             await axios.post('http://146.185.154.90:8000/messages', {
                 message: newMessage,
-                author: 'YourName', // Замените на ваше имя
+                author: 'It haker',
             });
 
             console.log('Message sent successfully!');
             setNewMessage('');
-            fetchMessages();
+            await fetchMessages();
         } catch (error) {
             console.error('Error posting message:', error);
         }
     };
 
     return (
-        <div>
-            <div>
+        <div className="container">
+            <div className="inputContainer">
                 <input
                     type="text"
                     value={newMessage}
@@ -55,9 +64,9 @@ const ChatApp: React.FC = () => {
                 />
                 <button onClick={postMessage}>Send</button>
             </div>
-            <div>
+            <div className="messagesContainer">
                 {messages.map((msg) => (
-                    <div key={msg._id}>
+                    <div key={msg._id} className="message">
                         <p>{msg.author}:</p>
                         <p>{msg.message}</p>
                         <p>{new Date(msg.datetime).toLocaleString()}</p>

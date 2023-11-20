@@ -9,6 +9,11 @@ interface Message {
     datetime: string;
 }
 
+interface PostMessageData {
+    message: string;
+    author: string;
+}
+
 const ChatApp: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -28,8 +33,11 @@ const ChatApp: React.FC = () => {
                 params: { lastMessageDate },
             });
 
-            const newMessages = response.data.reverse();
+            const newMessages = response.data;
+            newMessages.sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+
             setMessages((prevMessages) => [...prevMessages, ...newMessages]);
+
             if (newMessages.length > 0) {
                 setLastMessageDate(newMessages[0].datetime);
             }
@@ -39,11 +47,13 @@ const ChatApp: React.FC = () => {
     };
 
     const postMessage = async () => {
+        const postData: PostMessageData = {
+            message: newMessage,
+            author: 'YourName',
+        };
+
         try {
-            await axios.post('http://146.185.154.90:8000/messages', {
-                message: newMessage,
-                author: 'It haker',
-            });
+            await axios.post('http://146.185.154.90:8000/messages', postData);
 
             console.log('Message sent successfully!');
             setNewMessage('');
